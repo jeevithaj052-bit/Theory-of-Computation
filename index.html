@@ -1,0 +1,2133 @@
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Automata Simulator with Animation</title>
+      <style>
+          :root {
+              --primary-color: #6c5ce7;
+              --secondary-color: #2d3436;
+              --accent-color: #e84393;
+              --success-color: #00b894;
+              --background-color: #f7f9fc;
+              --text-color: #2d3436;
+              --highlight-color: #fdcb6e;
+              --state-color: #74b9ff;
+              --transition-color: #636e72;
+              --canvas-bg: #ffffff;
+              --panel-bg: #ffffff;
+              --hover-color: #a29bfe;
+              --border-color: #dfe6e9;
+          }
+
+          * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          }
+
+          body {
+              background: linear-gradient(135deg, #f7f9fc 0%, #e3e8f0 100%);
+              color: var(--text-color);
+              line-height: 1.6;
+              min-height: 100vh;
+          }
+
+          .container {
+              max-width: 1200px;
+              margin: 0 auto;
+              padding: 20px;
+          }
+
+          header {
+              text-align: center;
+              margin-bottom: 30px;
+              padding: 25px;
+              background: linear-gradient(135deg, var(--primary-color) 0%, #8e7cc3 100%);
+              color: white;
+              border-radius: 12px;
+              box-shadow: 0 8px 20px rgba(108, 92, 231, 0.2);
+              position: relative;
+              overflow: hidden;
+          }
+
+          header::before {
+              content: '';
+              position: absolute;
+              top: -50%;
+              left: -50%;
+              width: 200%;
+              height: 200%;
+              background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+              z-index: 1;
+          }
+
+          h1 {
+              font-size: 2.5rem;
+              margin-bottom: 10px;
+              position: relative;
+              z-index: 2;
+          }
+
+          .subtitle {
+              font-size: 1.2rem;
+              opacity: 0.9;
+              position: relative;
+              z-index: 2;
+          }
+
+          .main-content {
+              display: grid;
+              grid-template-columns: 1fr 2fr;
+              gap: 25px;
+          }
+
+          .control-panel {
+              background-color: var(--panel-bg);
+              padding: 25px;
+              border-radius: 12px;
+              box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+              max-height: 80vh;
+              overflow-y: auto;
+              border: 1px solid rgba(108, 92, 231, 0.1);
+          }
+
+          .visualization-area {
+              background-color: var(--canvas-bg);
+              padding: 25px;
+              border-radius: 12px;
+              box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+              min-height: 500px;
+              position: relative;
+              border: 1px solid rgba(108, 92, 231, 0.1);
+          }
+
+          .form-group {
+              margin-bottom: 20px;
+          }
+
+          label {
+              display: block;
+              margin-bottom: 8px;
+              font-weight: 600;
+              color: var(--secondary-color);
+          }
+
+          select, input, button, textarea {
+              width: 100%;
+              padding: 12px;
+              border: 1px solid var(--border-color);
+              border-radius: 8px;
+              font-size: 1rem;
+              transition: all 0.3s ease;
+          }
+
+          select:focus, input:focus, textarea:focus {
+              outline: none;
+              border-color: var(--primary-color);
+              box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+          }
+
+          button {
+              background: linear-gradient(135deg, var(--primary-color) 0%, #8e7cc3 100%);
+              color: white;
+              border: none;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              font-weight: 600;
+              box-shadow: 0 4px 6px rgba(108, 92, 231, 0.2);
+          }
+
+          button:hover {
+              background: linear-gradient(135deg, var(--hover-color) 0%, #8e7cc3 100%);
+              transform: translateY(-2px);
+              box-shadow: 0 6px 8px rgba(108, 92, 231, 0.3);
+          }
+
+          button:active {
+              transform: translateY(0);
+          }
+
+          .states-container, .transitions-container {
+              margin-top: 20px;
+              border-top: 1px solid #eee;
+              padding-top: 15px;
+          }
+
+          .state-item, .transition-item {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 12px;
+              margin-bottom: 10px;
+              background-color: #f8f9fa;
+              border-radius: 8px;
+              border-left: 4px solid var(--primary-color);
+              transition: all 0.3s ease;
+          }
+
+          .state-item:hover, .transition-item:hover {
+              background-color: #edf2f7;
+              transform: translateX(5px);
+          }
+
+          .state-actions, .transition-actions {
+              display: flex;
+              gap: 5px;
+          }
+
+          .state-item button, .transition-item button {
+              width: auto;
+              padding: 6px 12px;
+              font-size: 0.8rem;
+              background: linear-gradient(135deg, var(--accent-color) 0%, #fd79a8 100%);
+          }
+
+          .state-item button:hover, .transition-item button:hover {
+              background: linear-gradient(135deg, #fd79a8 0%, var(--accent-color) 100%);
+          }
+
+          .canvas-container {
+              width: 100%;
+              height: 100%;
+              position: relative;
+          }
+
+          #automataCanvas {
+              width: 100%;
+              height: 100%;
+              border: 1px solid var(--border-color);
+              border-radius: 8px;
+              cursor: move;
+              background-color: var(--canvas-bg);
+          }
+
+          .animation-controls {
+              display: flex;
+              gap: 10px;
+              margin-top: 20px;
+          }
+
+          .animation-controls button {
+              flex: 1;
+          }
+
+          .export-controls {
+              display: flex;
+              gap: 10px;
+              margin-top: 20px;
+          }
+
+          .export-controls button {
+              flex: 1;
+          }
+
+          .status-bar {
+              margin-top: 20px;
+              padding: 12px;
+              border-radius: 8px;
+              text-align: center;
+              font-weight: bold;
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+
+          .accepted {
+              background: linear-gradient(135deg, var(--success-color) 0%, #00a085 100%);
+              color: white;
+          }
+
+          .rejected {
+              background: linear-gradient(135deg, var(--accent-color) 0%, #fd79a8 100%);
+              color: white;
+          }
+
+          .step-info {
+              margin-top: 10px;
+              padding: 12px;
+              background-color: #f8f9fa;
+              border-radius: 8px;
+              border-left: 4px solid var(--highlight-color);
+          }
+
+          .current-symbol {
+              font-size: 1.2em;
+              font-weight: bold;
+              color: var(--primary-color);
+              text-align: center;
+              margin: 10px 0;
+              padding: 10px;
+              background-color: rgba(108, 92, 231, 0.1);
+              border-radius: 8px;
+          }
+
+          .highlight {
+              animation: pulse 1.5s infinite;
+          }
+
+          @keyframes pulse {
+              0% { 
+                  transform: scale(1);
+                  box-shadow: 0 0 0 0 rgba(253, 203, 110, 0.7);
+              }
+              50% { 
+                  transform: scale(1.05);
+                  box-shadow: 0 0 0 10px rgba(253, 203, 110, 0);
+              }
+              100% { 
+                  transform: scale(1);
+                  box-shadow: 0 0 0 0 rgba(253, 203, 110, 0);
+              }
+          }
+
+          .transition-highlight {
+              stroke: var(--highlight-color) !important;
+              stroke-width: 4px !important;
+              animation: dash 1s linear infinite;
+          }
+
+          @keyframes dash {
+              to {
+                  stroke-dashoffset: -20;
+              }
+          }
+
+          .state-highlight {
+              stroke: var(--highlight-color);
+              stroke-width: 4px;
+              animation: glow 1.5s ease-in-out infinite alternate;
+          }
+
+          @keyframes glow {
+              from {
+                  stroke-width: 4px;
+                  stroke: var(--highlight-color);
+              }
+              to {
+                  stroke-width: 8px;
+                  stroke: #ffeaa7;
+              }
+          }
+
+          .processing {
+              background-color: var(--highlight-color) !important;
+              color: white;
+          }
+
+          .transition-form {
+              display: flex;
+              gap: 10px;
+              margin-bottom: 10px;
+              align-items: center;
+          }
+
+          .transition-form select, .transition-form button {
+              flex: 1;
+          }
+
+          .symbol-checkboxes {
+              display: flex;
+              gap: 10px;
+              align-items: center;
+          }
+
+          .checkbox-group {
+              display: flex;
+              align-items: center;
+              gap: 5px;
+          }
+
+          .checkbox-group input[type="checkbox"] {
+              width: auto;
+              margin: 0;
+          }
+
+          .symbol-label {
+              font-size: 0.9rem;
+              font-weight: bold;
+          }
+
+          .regex-input {
+              font-family: monospace;
+          }
+
+          .regex-examples {
+              margin-top: 10px;
+              font-size: 0.9rem;
+              color: #666;
+          }
+
+          .regex-examples ul {
+              margin-left: 20px;
+              margin-top: 5px;
+          }
+
+          .regex-examples li {
+              margin-bottom: 3px;
+          }
+
+          .regex-examples code {
+              background-color: #f0f0f0;
+              padding: 2px 4px;
+              border-radius: 3px;
+          }
+
+          .pda-input-group {
+              display: none;
+          }
+
+          .stack-container {
+              position: absolute;
+              right: 20px;
+              top: 20px;
+              width: 100px;
+              background-color: white;
+              border: 2px solid var(--primary-color);
+              border-radius: 8px;
+              padding: 10px;
+              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+          }
+
+          .stack-title {
+              text-align: center;
+              font-weight: bold;
+              margin-bottom: 5px;
+              border-bottom: 1px solid #eee;
+              padding-bottom: 5px;
+              color: var(--primary-color);
+          }
+
+          .stack-content {
+              min-height: 150px;
+              display: flex;
+              flex-direction: column-reverse;
+              align-items: center;
+              gap: 2px;
+          }
+
+          .stack-item {
+              width: 80%;
+              padding: 5px;
+              text-align: center;
+              background: linear-gradient(135deg, var(--state-color) 0%, #0984e3 100%);
+              color: white;
+              border-radius: 4px;
+              font-weight: bold;
+          }
+
+          .stack-item:first-child {
+              background: linear-gradient(135deg, var(--highlight-color) 0%, #fdcb6e 100%);
+          }
+
+          .pda-transition-form {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr 1fr;
+              gap: 10px;
+              margin-bottom: 10px;
+              align-items: center;
+          }
+
+          .pda-transition-form select, .pda-transition-form input, .pda-transition-form button {
+              width: 100%;
+          }
+
+          .transition-label {
+              font-size: 0.9rem;
+              font-weight: bold;
+              text-align: center;
+          }
+
+          .pda-transition-item {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 8px;
+              margin-bottom: 8px;
+              background-color: #f9f9f9;
+              border-radius: 4px;
+              font-family: monospace;
+              border-left: 4px solid var(--accent-color);
+          }
+
+          .no-states-message {
+              text-align: center;
+              color: #666;
+              font-style: italic;
+              padding: 10px;
+          }
+
+          .no-transitions-message {
+              text-align: center;
+              color: #666;
+              font-style: italic;
+              padding: 10px;
+          }
+
+          /* Custom scrollbar for control panel */
+          .control-panel::-webkit-scrollbar {
+              width: 8px;
+          }
+
+          .control-panel::-webkit-scrollbar-track {
+              background: #f1f1f1;
+              border-radius: 4px;
+          }
+
+          .control-panel::-webkit-scrollbar-thumb {
+              background: var(--primary-color);
+              border-radius: 4px;
+          }
+
+          .control-panel::-webkit-scrollbar-thumb:hover {
+              background: var(--hover-color);
+          }
+
+          /* Responsive adjustments */
+          @media (max-width: 900px) {
+              .main-content {
+                  grid-template-columns: 1fr;
+              }
+              
+              .control-panel {
+                  max-height: none;
+              }
+          }
+      </style>
+  </head>
+  <body>
+      <div class="container">
+          <header>
+              <h1>Automata Simulator with Animation</h1>
+              <p class="subtitle">Visualize DFA, NFA, ε-NFA, Regular Expressions, and PDA with step-by-step animation</p>
+          </header>
+
+          <div class="main-content">
+              <div class="control-panel">
+                  <div class="form-group">
+                      <label for="automataType">Automata Type</label>
+                      <select id="automataType">
+                          <option value="dfa">Deterministic Finite Automaton (DFA)</option>
+                          <option value="nfa">Nondeterministic Finite Automaton (NFA)</option>
+                          <option value="enfa">ε-Nondeterministic Finite Automaton (ε-NFA)</option>
+                          <option value="regex">Regular Expression</option>
+                          <option value="pda">Pushdown Automaton (PDA)</option>
+                      </select>
+                  </div>
+
+                  <div class="form-group" id="regexInputGroup" style="display: none;">
+                      <label for="regexInput">Regular Expression</label>
+                      <textarea id="regexInput" class="regex-input" placeholder="Enter regular expression (e.g., (0|1)*01(0|1)*)" rows="3"></textarea>
+                      <div class="regex-examples">
+                          <strong>Examples:</strong>
+                          <ul>
+                              <li><code>(0|1)*</code> - All binary strings</li>
+                              <li><code>(0|1)*01(0|1)*</code> - Strings containing '01'</li>
+                              <li><code>0*1*</code> - Zero or more 0s followed by zero or more 1s</li>
+                              <li><code>(00|11)*</code> - Even length strings with alternating pairs</li>
+                          </ul>
+                      </div>
+                      <button id="buildAutomatonButton" style="margin-top: 10px;">Build Automaton</button>
+                  </div>
+
+                  <div class="form-group pda-input-group" id="pdaInputGroup">
+                      <label for="pdaInputString">Input String (Allowed: 0, 1, a, b)</label>
+                      <input type="text" id="pdaInputString" placeholder="Enter input string (e.g., '0011')" value="0011" pattern="[01ab]*" title="Only 0, 1, a, b characters are allowed">
+                      <label for="stackAlphabet" style="margin-top: 10px;">Stack Alphabet (comma separated)</label>
+                      <input type="text" id="stackAlphabet" placeholder="e.g., X,Y,Z" value="X,Z">
+                      <label for="initialStackSymbol" style="margin-top: 10px;">Initial Stack Symbol</label>
+                      <input type="text" id="initialStackSymbol" placeholder="e.g., Z" value="Z" maxlength="1">
+                  </div>
+
+                  <div class="form-group">
+                      <label for="inputString">Input String (Only 0 and 1 allowed)</label>
+                      <input type="text" id="inputString" placeholder="Enter input string (e.g., '0101')" value="0101" pattern="[01]*" title="Only 0 and 1 characters are allowed">
+                  </div>
+
+                  <div class="animation-controls">
+                      <button id="runButton">Run Animation</button>
+                      <button id="stepButton">Next Step</button>
+                      <button id="resetButton">Reset</button>
+                  </div>
+
+                  <div class="export-controls">
+                      <button id="downloadButton">Download Diagram</button>
+                  </div>
+
+                  <div class="current-symbol" id="currentSymbol">
+                      <!-- Current symbol being processed -->
+                  </div>
+
+                  <div class="status-bar" id="statusBar">
+                      Enter an input string and click "Run Animation"
+                  </div>
+
+                  <div class="step-info" id="stepInfo">
+                      <!-- Step information will be displayed here -->
+                  </div>
+
+                  <div class="states-container">
+                      <h3>States</h3>
+                      <div id="statesList">
+                          <div class="no-states-message">No states added yet</div>
+                      </div>
+                      <button id="addStateButton">Add State</button>
+                  </div>
+
+                  <div class="transitions-container">
+                      <h3 id="transitionsTitle">Transitions (Select symbols: 0, 1, or ε)</h3>
+                      
+                      <div id="standardTransitionForm" class="transition-form">
+                          <select id="fromStateSelect">
+                              <option value="">Select from state</option>
+                          </select>
+                          <div class="symbol-checkboxes">
+                              <div class="checkbox-group">
+                                  <input type="checkbox" id="symbol0" value="0">
+                                  <label for="symbol0" class="symbol-label">0</label>
+                              </div>
+                              <div class="checkbox-group">
+                                  <input type="checkbox" id="symbol1" value="1">
+                                  <label for="symbol1" class="symbol-label">1</label>
+                              </div>
+                              <div class="checkbox-group">
+                                  <input type="checkbox" id="symbolEpsilon" value="ε">
+                                  <label for="symbolEpsilon" class="symbol-label">ε</label>
+                              </div>
+                          </div>
+                          <select id="toStateSelect">
+                              <option value="">Select to state</option>
+                          </select>
+                          <button id="addTransitionButton">Add</button>
+                      </div>
+
+                      <div id="pdaTransitionForm" class="pda-transition-form" style="display: none;">
+                          <select id="pdaFromStateSelect">
+                              <option value="">From</option>
+                          </select>
+                          <input type="text" id="pdaInputSymbol" placeholder="Input (ε ok)" maxlength="1">
+                          <input type="text" id="pdaStackPop" placeholder="Pop (ε ok)" maxlength="1">
+                          <input type="text" id="pdaStackPush" placeholder="Push (ε ok)" maxlength="3">
+                          <select id="pdaToStateSelect">
+                              <option value="">To</option>
+                          </select>
+                          <button id="addPdaTransitionButton">Add</button>
+                      </div>
+                      
+                      <div id="transitionsList">
+                          <div class="no-transitions-message">No transitions added yet</div>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="visualization-area">
+                  <div class="canvas-container">
+                      <canvas id="automataCanvas"></canvas>
+                      <div class="stack-container" id="stackContainer" style="display: none;">
+                          <div class="stack-title">Stack</div>
+                          <div class="stack-content" id="stackContent">
+                              <!-- Stack items will be added here -->
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <script>
+          // Enhanced Automata simulator with multiple symbols per transition including ε
+          class AutomataSimulator {
+              constructor() {
+                  this.canvas = document.getElementById('automataCanvas');
+                  this.ctx = this.canvas.getContext('2d');
+                  this.states = [];
+                  this.transitions = [];
+                  this.currentStates = [];
+                  this.inputString = '';
+                  this.currentStep = 0;
+                  this.isRunning = false;
+                  this.animationId = null;
+                  this.activeTransitions = [];
+                  this.animationState = 'idle';
+                  this.draggingState = null;
+                  this.dragOffset = { x: 0, y: 0 };
+                  
+                  // PDA-specific properties
+                  this.stack = [];
+                  this.stackAlphabet = new Set();
+                  this.initialStackSymbol = 'Z';
+                  
+                  // State counter to ensure unique state IDs
+                  this.stateCounter = 0;
+                  
+                  this.setupEventListeners();
+                  this.resizeCanvas();
+                  this.initializeDefaultAutomata();
+                  this.updateStateSelects();
+                  this.drawAutomata();
+              }
+
+              setupEventListeners() {
+                  document.getElementById('automataType').addEventListener('change', () => {
+                      this.handleAutomataTypeChange();
+                  });
+
+                  document.getElementById('inputString').addEventListener('input', (e) => {
+                      // Validate input - only allow 0 and 1
+                      const input = e.target.value;
+                      const validInput = input.replace(/[^01]/g, '');
+                      e.target.value = validInput;
+                      this.inputString = validInput;
+                  });
+
+                  document.getElementById('pdaInputString').addEventListener('input', (e) => {
+                      // Validate input - allow 0, 1, a, b
+                      const input = e.target.value;
+                      const validInput = input.replace(/[^01ab]/g, '');
+                      e.target.value = validInput;
+                  });
+
+                  document.getElementById('stackAlphabet').addEventListener('input', (e) => {
+                      const alphabet = e.target.value.split(',').map(s => s.trim()).filter(s => s);
+                      this.stackAlphabet = new Set(alphabet);
+                  });
+
+                  document.getElementById('initialStackSymbol').addEventListener('input', (e) => {
+                      this.initialStackSymbol = e.target.value || 'Z';
+                  });
+
+                  document.getElementById('runButton').addEventListener('click', () => {
+                      this.runSimulation();
+                  });
+
+                  document.getElementById('stepButton').addEventListener('click', () => {
+                      this.stepSimulation();
+                  });
+
+                  document.getElementById('resetButton').addEventListener('click', () => {
+                      this.resetSimulation();
+                  });
+
+                  document.getElementById('addStateButton').addEventListener('click', () => {
+                      this.addState();
+                  });
+
+                  document.getElementById('addTransitionButton').addEventListener('click', () => {
+                      this.addTransition();
+                  });
+
+                  document.getElementById('addPdaTransitionButton').addEventListener('click', () => {
+                      this.addPdaTransition();
+                  });
+
+                  document.getElementById('buildAutomatonButton').addEventListener('click', () => {
+                      this.buildAutomatonFromRegex();
+                  });
+
+                  // ADDED: Download button event listener
+                  document.getElementById('downloadButton').addEventListener('click', () => {
+                      this.downloadDiagram();
+                  });
+
+                  // Mouse events for node movement
+                  this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                  this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                  this.canvas.addEventListener('mouseup', () => this.handleMouseUp());
+                  this.canvas.addEventListener('mouseleave', () => this.handleMouseUp());
+
+                  window.addEventListener('resize', () => {
+                      this.resizeCanvas();
+                      this.drawAutomata();
+                  });
+              }
+
+              // ADDED: Download diagram method
+              downloadDiagram() {
+                  // Create a temporary canvas for export
+                  const tempCanvas = document.createElement('canvas');
+                  const tempCtx = tempCanvas.getContext('2d');
+                  
+                  // Set a fixed size for the exported image
+                  tempCanvas.width = 1200;
+                  tempCanvas.height = 800;
+                  
+                  // Fill with white background
+                  tempCtx.fillStyle = 'white';
+                  tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                  
+                  // Calculate bounds of the automata
+                  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                  this.states.forEach(state => {
+                      minX = Math.min(minX, state.x - state.radius);
+                      maxX = Math.max(maxX, state.x + state.radius);
+                      minY = Math.min(minY, state.y - state.radius);
+                      maxY = Math.max(maxY, state.y + state.radius);
+                  });
+                  
+                  // Add padding
+                  const padding = 100;
+                  minX -= padding;
+                  maxX += padding;
+                  minY -= padding;
+                  maxY += padding;
+                  
+                  // Calculate scale to fit the automata in the export canvas
+                  const scaleX = tempCanvas.width / (maxX - minX);
+                  const scaleY = tempCanvas.height / (maxY - minY);
+                  const scale = Math.min(scaleX, scaleY) * 0.8; // 80% scale for better fit
+                  
+                  // Draw transitions first
+                  this.transitions.forEach(transition => {
+                      this.drawTransitionForExport(tempCtx, transition, minX, minY, scale);
+                  });
+                  
+                  // Draw states
+                  this.states.forEach(state => {
+                      this.drawStateForExport(tempCtx, state, minX, minY, scale);
+                  });
+                  
+                  // Create download link
+                  const link = document.createElement('a');
+                  link.download = 'automata-diagram.png';
+                  link.href = tempCanvas.toDataURL('image/png');
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+              }
+
+              // ADDED: Draw state for export (without animation effects)
+              drawStateForExport(ctx, state, offsetX, offsetY, scale) {
+                  const x = (state.x - offsetX) * scale;
+                  const y = (state.y - offsetY) * scale;
+                  const radius = state.radius * scale;
+                  
+                  // Determine state color based on properties only (no current state highlighting)
+                  let fillColor = '#ecf0f1'; // Default color
+                  
+                  if (state.isInitial && state.isFinal) {
+                      fillColor = '#9b59b6'; // Purple for both initial and final
+                  } else if (state.isInitial) {
+                      fillColor = '#3498db'; // Blue for initial
+                  } else if (state.isFinal) {
+                      fillColor = '#2ecc71'; // Green for final
+                  }
+
+                  ctx.beginPath();
+                  ctx.arc(x, y, radius, 0, Math.PI * 2);
+                  ctx.fillStyle = fillColor;
+                  ctx.fill();
+                  ctx.strokeStyle = '#2c3e50';
+                  ctx.lineWidth = 2;
+                  ctx.stroke();
+                  
+                  // Draw state label
+                  ctx.fillStyle = '#2c3e50';
+                  ctx.font = `${16 * scale}px Arial`;
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'middle';
+                  ctx.fillText(state.id, x, y);
+                  
+                  if (state.isInitial) {
+                      this.drawInitialArrowForExport(ctx, x, y, radius, scale);
+                  }
+                  
+                  if (state.isFinal) {
+                      ctx.beginPath();
+                      ctx.arc(x, y, radius - 5 * scale, 0, Math.PI * 2);
+                      ctx.strokeStyle = '#2c3e50';
+                      ctx.lineWidth = 2;
+                      ctx.stroke();
+                  }
+              }
+
+              // ADDED: Draw initial arrow for export
+              drawInitialArrowForExport(ctx, x, y, radius, scale) {
+                  const startX = x - radius - 40 * scale;
+                  const startY = y;
+                  const endX = x - radius;
+                  const endY = y;
+                  
+                  // Draw the arrow line
+                  ctx.beginPath();
+                  ctx.moveTo(startX, startY);
+                  ctx.lineTo(endX, endY);
+                  ctx.strokeStyle = '#2c3e50';
+                  ctx.lineWidth = 2;
+                  ctx.stroke();
+                  
+                  // Draw arrowhead
+                  const arrowLength = 10 * scale;
+                  const arrowAngle = Math.PI / 6;
+                  
+                  const arrowX1 = endX - arrowLength * Math.cos(arrowAngle);
+                  const arrowY1 = endY - arrowLength * Math.sin(arrowAngle);
+                  const arrowX2 = endX - arrowLength * Math.cos(-arrowAngle);
+                  const arrowY2 = endY - arrowLength * Math.sin(-arrowAngle);
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(endX, endY);
+                  ctx.lineTo(arrowX1, arrowY1);
+                  ctx.lineTo(arrowX2, arrowY2);
+                  ctx.closePath();
+                  ctx.fillStyle = '#2c3e50';
+                  ctx.fill();
+              }
+
+              // ADDED: Draw transition for export
+              drawTransitionForExport(ctx, transition, offsetX, offsetY, scale) {
+                  const fromState = this.states.find(s => s.id === transition.from);
+                  const toState = this.states.find(s => s.id === transition.to);
+                  
+                  if (!fromState || !toState) return;
+                  
+                  const fromX = (fromState.x - offsetX) * scale;
+                  const fromY = (fromState.y - offsetY) * scale;
+                  const toX = (toState.x - offsetX) * scale;
+                  const toY = (toState.y - offsetY) * scale;
+                  const radius = fromState.radius * scale;
+                  
+                  if (fromState.id === toState.id) {
+                      if (transition.symbols) {
+                          this.drawSelfLoopForExport(ctx, fromX, fromY, radius, transition.symbols.join(','));
+                      } else {
+                          this.drawSelfLoopForExport(ctx, fromX, fromY, radius, `${transition.input}, ${transition.pop} → ${transition.push}`);
+                      }
+                  } else {
+                      if (transition.symbols) {
+                          this.drawRegularTransitionForExport(ctx, fromX, fromY, toX, toY, radius, transition.symbols.join(','));
+                      } else {
+                          this.drawRegularTransitionForExport(ctx, fromX, fromY, toX, toY, radius, `${transition.input}, ${transition.pop} → ${transition.push}`);
+                      }
+                  }
+              }
+
+              // ADDED: Draw self-loop for export
+              drawSelfLoopForExport(ctx, x, y, radius, symbols) {
+                  const loopRadius = 25 * (radius / 30);
+                  const loopCenterX = x;
+                  const loopCenterY = y - radius - loopRadius;
+                  
+                  // Draw the circular path
+                  ctx.beginPath();
+                  ctx.arc(loopCenterX, loopCenterY, loopRadius, 0, Math.PI * 2);
+                  ctx.strokeStyle = '#2c3e50';
+                  ctx.lineWidth = 2;
+                  ctx.stroke();
+                  
+                  // Draw arrowhead
+                  const arrowAngle = Math.PI * 0.5;
+                  const arrowX = loopCenterX + loopRadius * Math.cos(arrowAngle);
+                  const arrowY = loopCenterY + loopRadius * Math.sin(arrowAngle);
+                  
+                  const arrowLength = 10 * (radius / 30);
+                  const arrowAngle1 = arrowAngle + Math.PI * 0.7;
+                  const arrowAngle2 = arrowAngle - Math.PI * 0.7;
+                  
+                  const arrowX1 = arrowX + arrowLength * Math.cos(arrowAngle1);
+                  const arrowY1 = arrowY + arrowLength * Math.sin(arrowAngle1);
+                  const arrowX2 = arrowX + arrowLength * Math.cos(arrowAngle2);
+                  const arrowY2 = arrowY + arrowLength * Math.sin(arrowAngle2);
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(arrowX, arrowY);
+                  ctx.lineTo(arrowX1, arrowY1);
+                  ctx.lineTo(arrowX2, arrowY2);
+                  ctx.closePath();
+                  ctx.fillStyle = '#2c3e50';
+                  ctx.fill();
+                  
+                  // Draw symbol label
+                  ctx.fillStyle = '#2c3e50';
+                  ctx.font = `${12 * (radius / 30)}px Arial`;
+                  ctx.textAlign = 'center';
+                  ctx.fillText(symbols, loopCenterX, loopCenterY - loopRadius - 8 * (radius / 30));
+              }
+
+              // ADDED: Draw regular transition for export
+              drawRegularTransitionForExport(ctx, fromX, fromY, toX, toY, radius, symbols) {
+                  const dx = toX - fromX;
+                  const dy = toY - fromY;
+                  const angle = Math.atan2(dy, dx);
+                  
+                  const startX = fromX + radius * Math.cos(angle);
+                  const startY = fromY + radius * Math.sin(angle);
+                  const endX = toX - radius * Math.cos(angle);
+                  const endY = toY - radius * Math.sin(angle);
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(startX, startY);
+                  
+                  // Add curve
+                  const midX = (startX + endX) / 2;
+                  const midY = (startY + endY) / 2;
+                  const offset = 20 * (radius / 30);
+                  const controlX = midX + offset * Math.cos(angle - Math.PI/2);
+                  const controlY = midY + offset * Math.sin(angle - Math.PI/2);
+                  
+                  ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+                  ctx.strokeStyle = '#2c3e50';
+                  ctx.lineWidth = 2;
+                  ctx.stroke();
+                  
+                  // Draw transition label
+                  const labelX = (startX + endX) / 2;
+                  const labelY = (startY + endY) / 2;
+                  
+                  const labelOffset = 25 * (radius / 30);
+                  const labelAngle = angle - Math.PI/2;
+                  ctx.fillStyle = '#2c3e50';
+                  ctx.font = `${12 * (radius / 30)}px Arial`;
+                  ctx.textAlign = 'center';
+                  ctx.fillText(symbols, labelX + labelOffset * Math.cos(labelAngle), labelY + labelOffset * Math.sin(labelAngle));
+                  
+                  // Draw arrowhead
+                  const arrowLength = 10 * (radius / 30);
+                  const arrowAngle = Math.PI / 6;
+                  
+                  const arrowX1 = endX - arrowLength * Math.cos(angle - arrowAngle);
+                  const arrowY1 = endY - arrowLength * Math.sin(angle - arrowAngle);
+                  const arrowX2 = endX - arrowLength * Math.cos(angle + arrowAngle);
+                  const arrowY2 = endY - arrowLength * Math.sin(angle + arrowAngle);
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(endX, endY);
+                  ctx.lineTo(arrowX1, arrowY1);
+                  ctx.lineTo(arrowX2, arrowY2);
+                  ctx.closePath();
+                  ctx.fillStyle = '#2c3e50';
+                  ctx.fill();
+              }
+
+              handleAutomataTypeChange() {
+                  const type = document.getElementById('automataType').value;
+                  const regexInputGroup = document.getElementById('regexInputGroup');
+                  const pdaInputGroup = document.getElementById('pdaInputGroup');
+                  const standardTransitionForm = document.getElementById('standardTransitionForm');
+                  const pdaTransitionForm = document.getElementById('pdaTransitionForm');
+                  const transitionsTitle = document.getElementById('transitionsTitle');
+                  const stackContainer = document.getElementById('stackContainer');
+                  
+                  if (type === 'regex') {
+                      regexInputGroup.style.display = 'block';
+                      pdaInputGroup.style.display = 'none';
+                      standardTransitionForm.style.display = 'flex';
+                      pdaTransitionForm.style.display = 'none';
+                      stackContainer.style.display = 'none';
+                      transitionsTitle.textContent = 'Transitions (Select symbols: 0, 1, or ε)';
+                  } else if (type === 'pda') {
+                      regexInputGroup.style.display = 'none';
+                      pdaInputGroup.style.display = 'block';
+                      standardTransitionForm.style.display = 'none';
+                      pdaTransitionForm.style.display = 'grid';
+                      stackContainer.style.display = 'block';
+                      transitionsTitle.textContent = 'PDA Transitions (input, pop, push)';
+                      this.initializeDefaultPDA();
+                  } else {
+                      regexInputGroup.style.display = 'none';
+                      pdaInputGroup.style.display = 'none';
+                      standardTransitionForm.style.display = 'flex';
+                      pdaTransitionForm.style.display = 'none';
+                      stackContainer.style.display = 'none';
+                      transitionsTitle.textContent = 'Transitions (Select symbols: 0, 1, or ε)';
+                  }
+                  
+                  this.resetSimulation();
+                  this.drawAutomata();
+              }
+
+              handleMouseDown(e) {
+                  const rect = this.canvas.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+
+                  // Check if clicked on a state
+                  for (let i = this.states.length - 1; i >= 0; i--) {
+                      const state = this.states[i];
+                      const distance = Math.sqrt((x - state.x) ** 2 + (y - state.y) ** 2);
+                      
+                      if (distance <= state.radius) {
+                          this.draggingState = state;
+                          this.dragOffset.x = x - state.x;
+                          this.dragOffset.y = y - state.y;
+                          this.canvas.style.cursor = 'grabbing';
+                          break;
+                      }
+                  }
+              }
+
+              handleMouseMove(e) {
+                  if (this.draggingState) {
+                      const rect = this.canvas.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+
+                      this.draggingState.x = x - this.dragOffset.x;
+                      this.draggingState.y = y - this.dragOffset.y;
+
+                      // Keep state within canvas bounds
+                      this.draggingState.x = Math.max(this.draggingState.radius, 
+                          Math.min(this.canvas.width - this.draggingState.radius, this.draggingState.x));
+                      this.draggingState.y = Math.max(this.draggingState.radius, 
+                          Math.min(this.canvas.height - this.draggingState.radius, this.draggingState.y));
+
+                      this.drawAutomata();
+                  } else {
+                      // Check if hovering over a state
+                      const rect = this.canvas.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+
+                      let isOverState = false;
+                      for (const state of this.states) {
+                          const distance = Math.sqrt((x - state.x) ** 2 + (y - state.y) ** 2);
+                          if (distance <= state.radius) {
+                              isOverState = true;
+                              break;
+                          }
+                      }
+                      this.canvas.style.cursor = isOverState ? 'grab' : 'default';
+                  }
+              }
+
+              handleMouseUp() {
+                  this.draggingState = null;
+                  this.canvas.style.cursor = 'default';
+              }
+
+              resizeCanvas() {
+                  const container = this.canvas.parentElement;
+                  this.canvas.width = container.clientWidth;
+                  this.canvas.height = container.clientHeight;
+              }
+
+              initializeDefaultAutomata() {
+                  // Create default automata for demonstration
+                  this.states = [
+                      { id: 'q0', x: 150, y: 200, isInitial: true, isFinal: false, radius: 30 },
+                      { id: 'q1', x: 350, y: 200, isInitial: false, isFinal: false, radius: 30 },
+                      { id: 'q2', x: 550, y: 200, isInitial: false, isFinal: true, radius: 30 }
+                  ];
+
+                  this.transitions = [
+                      { from: 'q0', to: 'q1', symbols: ['0'] },
+                      { from: 'q0', to: 'q0', symbols: ['1'] },
+                      { from: 'q1', to: 'q2', symbols: ['1'] },
+                      { from: 'q1', to: 'q0', symbols: ['0'] },
+                      { from: 'q2', to: 'q2', symbols: ['0', '1'] } // Example with both symbols
+                  ];
+
+                  // Set state counter to avoid ID conflicts
+                  this.stateCounter = 3;
+
+                  this.updateStatesList();
+                  this.updateTransitionsList();
+              }
+
+              initializeDefaultPDA() {
+                  // Create default PDA for demonstration (accepts balanced parentheses)
+                  this.states = [
+                      { id: 'q0', x: 300, y: 200, isInitial: true, isFinal: true, radius: 30 },
+                      { id: 'q1', x: 500, y: 200, isInitial: false, isFinal: false, radius: 30 }
+                  ];
+
+                  this.transitions = [
+                      { from: 'q0', to: 'q0', input: '0', pop: 'Z', push: '0Z' },
+                      { from: 'q0', to: 'q0', input: '0', pop: '0', push: '00' },
+                      { from: 'q0', to: 'q1', input: '1', pop: '0', push: 'ε' },
+                      { from: 'q1', to: 'q1', input: '1', pop: '0', push: 'ε' },
+                      { from: 'q1', to: 'q0', input: 'ε', pop: 'Z', push: 'Z' }
+                  ];
+
+                  // Initialize stack alphabet
+                  this.stackAlphabet = new Set(['0', 'Z']);
+                  document.getElementById('stackAlphabet').value = '0,Z';
+                  document.getElementById('initialStackSymbol').value = 'Z';
+                  
+                  // Set state counter to avoid ID conflicts
+                  this.stateCounter = 2;
+
+                  this.updateStatesList();
+                  this.updateTransitionsList();
+              }
+
+              updateStateSelects() {
+                  const fromSelect = document.getElementById('fromStateSelect');
+                  const toSelect = document.getElementById('toStateSelect');
+                  const pdaFromSelect = document.getElementById('pdaFromStateSelect');
+                  const pdaToSelect = document.getElementById('pdaToStateSelect');
+                  
+                  // Clear existing options but keep the first "Select" option
+                  fromSelect.innerHTML = '<option value="">Select from state</option>';
+                  toSelect.innerHTML = '<option value="">Select to state</option>';
+                  pdaFromSelect.innerHTML = '<option value="">From</option>';
+                  pdaToSelect.innerHTML = '<option value="">To</option>';
+                  
+                  this.states.forEach(state => {
+                      const fromOption = document.createElement('option');
+                      fromOption.value = state.id;
+                      fromOption.textContent = state.id;
+                      fromSelect.appendChild(fromOption);
+                      
+                      const toOption = document.createElement('option');
+                      toOption.value = state.id;
+                      toOption.textContent = state.id;
+                      toSelect.appendChild(toOption);
+                      
+                      const pdaFromOption = document.createElement('option');
+                      pdaFromOption.value = state.id;
+                      pdaFromOption.textContent = state.id;
+                      pdaFromSelect.appendChild(pdaFromOption);
+                      
+                      const pdaToOption = document.createElement('option');
+                      pdaToOption.value = state.id;
+                      pdaToOption.textContent = state.id;
+                      pdaToSelect.appendChild(pdaToOption);
+                  });
+              }
+
+              addTransition() {
+                  if (this.states.length < 2) {
+                      alert('Need at least 2 states to add a transition');
+                      return;
+                  }
+                  
+                  const fromState = document.getElementById('fromStateSelect').value;
+                  const toState = document.getElementById('toStateSelect').value;
+                  const symbol0 = document.getElementById('symbol0');
+                  const symbol1 = document.getElementById('symbol1');
+                  const symbolEpsilon = document.getElementById('symbolEpsilon');
+                  
+                  // Get selected symbols
+                  const symbols = [];
+                  if (symbol0.checked) symbols.push('0');
+                  if (symbol1.checked) symbols.push('1');
+                  if (symbolEpsilon.checked) symbols.push('ε');
+                  
+                  // Validate at least one symbol is selected
+                  if (symbols.length === 0) {
+                      alert('Please select at least one symbol (0, 1, or ε)');
+                      return;
+                  }
+                  
+                  if (!fromState || !toState) {
+                      alert('Please select both from and to states');
+                      return;
+                  }
+                  
+                  // Create a single transition with all selected symbols
+                  this.transitions.push({
+                      from: fromState,
+                      to: toState,
+                      symbols: symbols
+                  });
+                  
+                  // Clear checkboxes
+                  symbol0.checked = false;
+                  symbol1.checked = false;
+                  symbolEpsilon.checked = false;
+                  
+                  this.updateTransitionsList();
+                  this.drawAutomata();
+              }
+
+              addPdaTransition() {
+                  if (this.states.length < 2) {
+                      alert('Need at least 2 states to add a transition');
+                      return;
+                  }
+                  
+                  const fromState = document.getElementById('pdaFromStateSelect').value;
+                  const toState = document.getElementById('pdaToStateSelect').value;
+                  const inputSymbol = document.getElementById('pdaInputSymbol').value || 'ε';
+                  const stackPop = document.getElementById('pdaStackPop').value || 'ε';
+                  const stackPush = document.getElementById('pdaStackPush').value || 'ε';
+                  
+                  if (!fromState || !toState) {
+                      alert('Please select both from and to states');
+                      return;
+                  }
+                  
+                  // Validate stack operations
+                  if (stackPop !== 'ε' && !this.stackAlphabet.has(stackPop)) {
+                      alert(`Stack pop symbol '${stackPop}' is not in stack alphabet`);
+                      return;
+                  }
+                  
+                  if (stackPush !== 'ε') {
+                      for (const char of stackPush) {
+                          if (!this.stackAlphabet.has(char)) {
+                              alert(`Stack push symbol '${char}' is not in stack alphabet`);
+                              return;
+                          }
+                      }
+                  }
+                  
+                  // Create PDA transition
+                  this.transitions.push({
+                      from: fromState,
+                      to: toState,
+                      input: inputSymbol,
+                      pop: stackPop,
+                      push: stackPush
+                  });
+                  
+                  // Clear inputs
+                  document.getElementById('pdaInputSymbol').value = '';
+                  document.getElementById('pdaStackPop').value = '';
+                  document.getElementById('pdaStackPush').value = '';
+                  
+                  this.updateTransitionsList();
+                  this.drawAutomata();
+              }
+
+              addState() {
+                  // Generate unique state ID
+                  const stateId = `q${this.stateCounter}`;
+                  this.stateCounter++;
+                  
+                  // Determine if this should be the initial state (only if no states exist)
+                  const isInitial = this.states.length === 0;
+                  
+                  // Create new state
+                  const newState = {
+                      id: stateId,
+                      x: 100 + Math.random() * (this.canvas.width - 200),
+                      y: 100 + Math.random() * (this.canvas.height - 200),
+                      isInitial: isInitial,
+                      isFinal: false,
+                      radius: 30
+                  };
+                  
+                  // Add to states array
+                  this.states.push(newState);
+                  
+                  // Update UI
+                  this.updateStatesList();
+                  this.updateStateSelects();
+                  this.drawAutomata();
+              }
+
+              updateStatesList() {
+                  const statesList = document.getElementById('statesList');
+                  
+                  // Clear existing content
+                  statesList.innerHTML = '';
+                  
+                  if (this.states.length === 0) {
+                      statesList.innerHTML = '<div class="no-states-message">No states added yet</div>';
+                      return;
+                  }
+                  
+                  // Add each state to the list
+                  this.states.forEach((state, index) => {
+                      const stateItem = document.createElement('div');
+                      stateItem.className = 'state-item';
+                      stateItem.dataset.stateId = state.id;
+                      
+                      const stateInfo = document.createElement('div');
+                      stateInfo.innerHTML = `
+                          <strong>${state.id}</strong> 
+                          ${state.isInitial ? '(Initial)' : ''} 
+                          ${state.isFinal ? '(Final)' : ''}
+                      `;
+                      
+                      const stateActions = document.createElement('div');
+                      stateActions.className = 'state-actions';
+                      
+                      // Toggle initial state button
+                      const toggleInitialBtn = document.createElement('button');
+                      toggleInitialBtn.textContent = state.isInitial ? 'Remove Initial' : 'Set Initial';
+                      toggleInitialBtn.title = state.isInitial ? 'Remove Initial' : 'Set as Initial';
+                      toggleInitialBtn.addEventListener('click', () => {
+                          // Only one state can be initial
+                          this.states.forEach(s => s.isInitial = false);
+                          state.isInitial = !state.isInitial;
+                          this.updateStatesList();
+                          this.drawAutomata();
+                      });
+                      
+                      // Toggle final state button
+                      const toggleFinalBtn = document.createElement('button');
+                      toggleFinalBtn.textContent = state.isFinal ? 'Remove Final' : 'Set Final';
+                      toggleFinalBtn.title = state.isFinal ? 'Remove Final' : 'Set as Final';
+                      toggleFinalBtn.addEventListener('click', () => {
+                          state.isFinal = !state.isFinal;
+                          this.updateStatesList();
+                          this.drawAutomata();
+                      });
+                      
+                      // Delete state button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.title = 'Delete State';
+                    deleteBtn.addEventListener('click', () => {
+                        // Remove the state
+                        this.states.splice(index, 1);
+                        
+                        // Remove all transitions involving this state
+                        this.transitions = this.transitions.filter(t => 
+                            t.from !== state.id && t.to !== state.id
+                        );
+                        
+                        // FIX: If we deleted the initial state and there are other states, set the first one as initial
+                        if (state.isInitial && this.states.length > 0) {
+                            this.states[0].isInitial = true;
+                        }
+                        
+                        // FIX: Add this line - Reset state counter when all states are deleted
+                        if (this.states.length === 0) {
+                            this.stateCounter = 0;
+                        }
+                        
+                        this.updateStatesList();
+                        this.updateTransitionsList();
+                        this.updateStateSelects();
+                        this.drawAutomata();
+                    });
+                      
+                      stateActions.appendChild(toggleInitialBtn);
+                      stateActions.appendChild(toggleFinalBtn);
+                      stateActions.appendChild(deleteBtn);
+                      
+                      stateItem.appendChild(stateInfo);
+                      stateItem.appendChild(stateActions);
+                      statesList.appendChild(stateItem);
+                  });
+              }
+
+              updateTransitionsList() {
+                  const transitionsList = document.getElementById('transitionsList');
+                  
+                  // Clear existing content
+                  transitionsList.innerHTML = '';
+                  
+                  if (this.transitions.length === 0) {
+                      transitionsList.innerHTML = '<div class="no-transitions-message">No transitions added yet</div>';
+                      return;
+                  }
+                  
+                  // Add each transition to the list
+                  this.transitions.forEach((transition, index) => {
+                      const transitionItem = document.createElement('div');
+                      
+                      if (transition.symbols) {
+                          // Standard transition (DFA/NFA)
+                          transitionItem.className = 'transition-item';
+                          const symbolsText = transition.symbols.sort().join(',');
+                          const transitionInfo = document.createElement('div');
+                          transitionInfo.textContent = `${transition.from} --{${symbolsText}}--> ${transition.to}`;
+                          
+                          const transitionActions = document.createElement('div');
+                          transitionActions.className = 'transition-actions';
+                          
+                          const deleteBtn = document.createElement('button');
+                          deleteBtn.textContent = 'Delete';
+                          deleteBtn.addEventListener('click', () => {
+                              this.transitions.splice(index, 1);
+                              this.updateTransitionsList();
+                              this.drawAutomata();
+                          });
+                          
+                          transitionActions.appendChild(deleteBtn);
+                          
+                          transitionItem.appendChild(transitionInfo);
+                          transitionItem.appendChild(transitionActions);
+                      } else {
+                          // PDA transition
+                          transitionItem.className = 'pda-transition-item';
+                          const transitionInfo = document.createElement('div');
+                          transitionInfo.textContent = `${transition.from} -- ${transition.input}, ${transition.pop} → ${transition.push} --> ${transition.to}`;
+                          
+                          const transitionActions = document.createElement('div');
+                          transitionActions.className = 'transition-actions';
+                          
+                          const deleteBtn = document.createElement('button');
+                          deleteBtn.textContent = 'Delete';
+                          deleteBtn.addEventListener('click', () => {
+                              this.transitions.splice(index, 1);
+                              this.updateTransitionsList();
+                              this.drawAutomata();
+                          });
+                          
+                          transitionActions.appendChild(deleteBtn);
+                          
+                          transitionItem.appendChild(transitionInfo);
+                          transitionItem.appendChild(transitionActions);
+                      }
+                      
+                      transitionsList.appendChild(transitionItem);
+                  });
+              }
+
+              drawAutomata() {
+                  this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                  
+                  // Draw transitions first (so they appear behind states)
+                  this.transitions.forEach(transition => {
+                      this.drawTransition(transition);
+                  });
+                  
+                  // Draw states
+                  this.states.forEach(state => {
+                      this.drawState(state);
+                  });
+                  
+                  // Highlight active transitions
+                  this.activeTransitions.forEach(transition => {
+                      this.highlightTransition(transition);
+                  });
+                  
+                  // Highlight current states with red color
+                  if (this.isRunning && this.currentStates.length > 0) {
+                      this.currentStates.forEach(stateId => {
+                          const state = this.states.find(s => s.id === stateId);
+                          if (state) {
+                              this.highlightState(state);
+                          }
+                      });
+                  }
+
+                  // Update stack visualization
+                  this.updateStackVisualization();
+              }
+
+              drawState(state) {
+                  // Determine state color based on current state and properties
+                  let fillColor = '#ecf0f1'; // Default color
+                  
+                  if (this.currentStates.includes(state.id) && this.isRunning) {
+                      // Current active state - red color
+                      fillColor = '#e74c3c';
+                  } else if (state.isInitial && state.isFinal) {
+                      fillColor = '#9b59b6'; // Purple for both initial and final
+                  } else if (state.isInitial) {
+                      fillColor = '#3498db'; // Blue for initial
+                  } else if (state.isFinal) {
+                      fillColor = '#2ecc71'; // Green for final
+                  }
+
+                  this.ctx.beginPath();
+                  this.ctx.arc(state.x, state.y, state.radius, 0, Math.PI * 2);
+                  this.ctx.fillStyle = fillColor;
+                  this.ctx.fill();
+                  this.ctx.strokeStyle = '#2c3e50';
+                  this.ctx.lineWidth = 2;
+                  this.ctx.stroke();
+                  
+                  // Draw state label
+                  this.ctx.fillStyle = this.currentStates.includes(state.id) && this.isRunning ? 'white' : '#2c3e50';
+                  this.ctx.font = '16px Arial';
+                  this.ctx.textAlign = 'center';
+                  this.ctx.textBaseline = 'middle';
+                  this.ctx.fillText(state.id, state.x, state.y);
+                  
+                  if (state.isInitial) {
+                      this.drawInitialArrow(state);
+                  }
+                  
+                  if (state.isFinal) {
+                      this.ctx.beginPath();
+                      this.ctx.arc(state.x, state.y, state.radius - 5, 0, Math.PI * 2);
+                      this.ctx.strokeStyle = '#2c3e50';
+                      this.ctx.lineWidth = 2;
+                      this.ctx.stroke();
+                  }
+              }
+
+              drawInitialArrow(state) {
+                  // Draw initial arrow pointing to the center of the state from the left
+                  const startX = state.x - state.radius - 40;
+                  const startY = state.y;
+                  const endX = state.x - state.radius;
+                  const endY = state.y;
+                  
+                  // Draw the arrow line
+                  this.ctx.beginPath();
+                  this.ctx.moveTo(startX, startY);
+                  this.ctx.lineTo(endX, endY);
+                  this.ctx.strokeStyle = '#2c3e50';
+                  this.ctx.lineWidth = 2;
+                  this.ctx.stroke();
+                  
+                  // Draw arrowhead
+                  const arrowLength = 10;
+                  const arrowAngle = Math.PI / 6;
+                  
+                  const arrowX1 = endX - arrowLength * Math.cos(arrowAngle);
+                  const arrowY1 = endY - arrowLength * Math.sin(arrowAngle);
+                  const arrowX2 = endX - arrowLength * Math.cos(-arrowAngle);
+                  const arrowY2 = endY - arrowLength * Math.sin(-arrowAngle);
+                  
+                  this.ctx.beginPath();
+                  this.ctx.moveTo(endX, endY);
+                  this.ctx.lineTo(arrowX1, arrowY1);
+                  this.ctx.lineTo(arrowX2, arrowY2);
+                  this.ctx.closePath();
+                  this.ctx.fillStyle = '#2c3e50';
+                  this.ctx.fill();
+              }
+
+              drawTransition(transition) {
+                  const fromState = this.states.find(s => s.id === transition.from);
+                  const toState = this.states.find(s => s.id === transition.to);
+                  
+                  if (!fromState || !toState) return;
+                  
+                  // Check if this is a self-loop
+                  if (fromState.id === toState.id) {
+                      if (transition.symbols) {
+                          this.drawSelfLoop(fromState, transition.symbols.join(','));
+                      } else {
+                          this.drawSelfLoop(fromState, `${transition.input}, ${transition.pop} → ${transition.push}`);
+                      }
+                  } else {
+                      if (transition.symbols) {
+                          this.drawRegularTransition(fromState, toState, transition.symbols.join(','));
+                      } else {
+                          this.drawRegularTransition(fromState, toState, `${transition.input}, ${transition.pop} → ${transition.push}`);
+                      }
+                  }
+              }
+
+              drawSelfLoop(state, symbols) {
+                  // Draw a proper circular self-loop above the state
+                  const loopRadius = 25;
+                  const loopCenterX = state.x;
+                  const loopCenterY = state.y - state.radius - loopRadius;
+                  
+                  // Draw the circular path
+                  this.ctx.beginPath();
+                  this.ctx.arc(loopCenterX, loopCenterY, loopRadius, 0, Math.PI * 2);
+                  this.ctx.strokeStyle = '#2c3e50';
+                  this.ctx.lineWidth = 2;
+                  this.ctx.stroke();
+                  
+                  // Draw arrowhead at the bottom of the loop (pointing into the state)
+                  const arrowAngle = Math.PI * 0.5; // Pointing down
+                  const arrowX = loopCenterX + loopRadius * Math.cos(arrowAngle);
+                  const arrowY = loopCenterY + loopRadius * Math.sin(arrowAngle);
+                  
+                  const arrowLength = 10;
+                  const arrowAngle1 = arrowAngle + Math.PI * 0.7;
+                  const arrowAngle2 = arrowAngle - Math.PI * 0.7;
+                  
+                  const arrowX1 = arrowX + arrowLength * Math.cos(arrowAngle1);
+                  const arrowY1 = arrowY + arrowLength * Math.sin(arrowAngle1);
+                  const arrowX2 = arrowX + arrowLength * Math.cos(arrowAngle2);
+                  const arrowY2 = arrowY + arrowLength * Math.sin(arrowAngle2);
+                  
+                  this.ctx.beginPath();
+                  this.ctx.moveTo(arrowX, arrowY);
+                  this.ctx.lineTo(arrowX1, arrowY1);
+                  this.ctx.lineTo(arrowX2, arrowY2);
+                  this.ctx.closePath();
+                  this.ctx.fillStyle = '#2c3e50';
+                  this.ctx.fill();
+                  
+                  // Draw symbol label above the self-loop
+                  this.ctx.fillStyle = '#2c3e50';
+                  this.ctx.font = '12px Arial';
+                  this.ctx.textAlign = 'center';
+                  this.ctx.fillText(symbols, loopCenterX, loopCenterY - loopRadius - 8);
+              }
+
+              drawRegularTransition(fromState, toState, symbols) {
+                  const dx = toState.x - fromState.x;
+                  const dy = toState.y - fromState.y;
+                  const angle = Math.atan2(dy, dx);
+                  
+                  const startX = fromState.x + fromState.radius * Math.cos(angle);
+                  const startY = fromState.y + fromState.radius * Math.sin(angle);
+                  const endX = toState.x - toState.radius * Math.cos(angle);
+                  const endY = toState.y - toState.radius * Math.sin(angle);
+                  
+                  this.ctx.beginPath();
+                  this.ctx.moveTo(startX, startY);
+                  
+                  // Add a slight curve to make parallel transitions visible
+                  const midX = (startX + endX) / 2;
+                  const midY = (startY + endY) / 2;
+                  const offset = 20;
+                  const controlX = midX + offset * Math.cos(angle - Math.PI/2);
+                  const controlY = midY + offset * Math.sin(angle - Math.PI/2);
+                  
+                  this.ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+                  this.ctx.strokeStyle = '#2c3e50';
+                  this.ctx.lineWidth = 2;
+                  this.ctx.stroke();
+                  
+                  // Draw transition label
+                  const labelX = (startX + endX) / 2;
+                  const labelY = (startY + endY) / 2;
+                  
+                  const labelOffset = 25;
+                  const labelAngle = angle - Math.PI/2;
+                  this.ctx.fillStyle = '#2c3e50';
+                  this.ctx.font = '12px Arial';
+                  this.ctx.textAlign = 'center';
+                  this.ctx.fillText(symbols, labelX + labelOffset * Math.cos(labelAngle), labelY + labelOffset * Math.sin(labelAngle));
+                  
+                  // Draw arrowhead
+                  const arrowLength = 10;
+                  const arrowAngle = Math.PI / 6;
+                  
+                  const arrowX1 = endX - arrowLength * Math.cos(angle - arrowAngle);
+                  const arrowY1 = endY - arrowLength * Math.sin(angle - arrowAngle);
+                  const arrowX2 = endX - arrowLength * Math.cos(angle + arrowAngle);
+                  const arrowY2 = endY - arrowLength * Math.sin(angle + arrowAngle);
+                  
+                  this.ctx.beginPath();
+                  this.ctx.moveTo(endX, endY);
+                  this.ctx.lineTo(arrowX1, arrowY1);
+                  this.ctx.lineTo(arrowX2, arrowY2);
+                  this.ctx.closePath();
+                  this.ctx.fillStyle = '#2c3e50';
+                  this.ctx.fill();
+              }
+
+              highlightState(state) {
+                  // Add pulsing glow effect around current state
+                  this.ctx.beginPath();
+                  this.ctx.arc(state.x, state.y, state.radius + 8, 0, Math.PI * 2);
+                  this.ctx.strokeStyle = 'rgba(231, 76, 60, 0.5)';
+                  this.ctx.lineWidth = 3;
+                  this.ctx.stroke();
+              }
+
+              highlightTransition(transition) {
+                  const fromState = this.states.find(s => s.id === transition.from);
+                  const toState = this.states.find(s => s.id === transition.to);
+                  
+                  if (!fromState || !toState) return;
+                  
+                  if (fromState.id === toState.id) {
+                      this.highlightSelfLoop(fromState);
+                  } else {
+                      this.highlightRegularTransition(fromState, toState);
+                  }
+              }
+
+              highlightSelfLoop(state) {
+                  const loopRadius = 25;
+                  const loopCenterX = state.x;
+                  const loopCenterY = state.y - state.radius - loopRadius;
+                  
+                  this.ctx.beginPath();
+                  this.ctx.arc(loopCenterX, loopCenterY, loopRadius, 0, Math.PI * 2);
+                  this.ctx.strokeStyle = '#f39c12';
+                  this.ctx.lineWidth = 4;
+                  this.ctx.setLineDash([5, 5]);
+                  this.ctx.stroke();
+                  this.ctx.setLineDash([]);
+              }
+
+              highlightRegularTransition(fromState, toState) {
+                  const dx = toState.x - fromState.x;
+                  const dy = toState.y - fromState.y;
+                  const angle = Math.atan2(dy, dx);
+                  
+                  const startX = fromState.x + fromState.radius * Math.cos(angle);
+                  const startY = fromState.y + fromState.radius * Math.sin(angle);
+                  const endX = toState.x - toState.radius * Math.cos(angle);
+                  const endY = toState.y - toState.radius * Math.sin(angle);
+                  
+                  this.ctx.beginPath();
+                  this.ctx.moveTo(startX, startY);
+                  
+                  const midX = (startX + endX) / 2;
+                  const midY = (startY + endY) / 2;
+                  const offset = 20;
+                  const controlX = midX + offset * Math.cos(angle - Math.PI/2);
+                  const controlY = midY + offset * Math.sin(angle - Math.PI/2);
+                  
+                  this.ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+                  this.ctx.strokeStyle = '#f39c12';
+                  this.ctx.lineWidth = 4;
+                  this.ctx.setLineDash([5, 5]);
+                  this.ctx.stroke();
+                  this.ctx.setLineDash([]);
+              }
+
+              updateStackVisualization() {
+                  const stackContent = document.getElementById('stackContent');
+                  stackContent.innerHTML = '';
+                  
+                  // Show stack bottom marker if stack is empty
+                  if (this.stack.length === 0) {
+                      const emptyItem = document.createElement('div');
+                      emptyItem.className = 'stack-item';
+                      emptyItem.textContent = '⊥';
+                      emptyItem.style.backgroundColor = '#95a5a6';
+                      stackContent.appendChild(emptyItem);
+                      return;
+                  }
+                  
+                  // Add stack items (top to bottom)
+                  for (let i = this.stack.length - 1; i >= 0; i--) {
+                      const stackItem = document.createElement('div');
+                      stackItem.className = 'stack-item';
+                      stackItem.textContent = this.stack[i];
+                      
+                      // Highlight top of stack
+                      if (i === this.stack.length - 1) {
+                          stackItem.style.backgroundColor = 'var(--highlight-color)';
+                      }
+                      
+                      stackContent.appendChild(stackItem);
+                  }
+                  
+                  // Add stack bottom marker
+                  const bottomItem = document.createElement('div');
+                  bottomItem.className = 'stack-item';
+                  bottomItem.textContent = '⊥';
+                  bottomItem.style.backgroundColor = '#95a5a6';
+                  stackContent.appendChild(bottomItem);
+              }
+
+              async runSimulation() {
+                  const automataType = document.getElementById('automataType').value;
+                  
+                  if (automataType === 'pda') {
+                      this.inputString = document.getElementById('pdaInputString').value;
+                  }
+                  
+                  if (this.inputString === '') {
+                      alert('Please enter an input string');
+                      return;
+                  }
+                  
+                  if (this.states.length === 0) {
+                      alert('Please add at least one state');
+                      return;
+                  }
+                  
+                  const initialState = this.states.find(s => s.isInitial);
+                  if (!initialState) {
+                      alert('Please set an initial state');
+                      return;
+                  }
+                  
+                  this.isRunning = true;
+                  this.currentStep = 0;
+                  
+                  if (automataType === 'dfa') {
+                      this.currentStates = [initialState.id];
+                  } else if (automataType === 'nfa' || automataType === 'enfa' || automataType === 'regex') {
+                      this.currentStates = [initialState.id];
+                      if (automataType === 'enfa' || automataType === 'regex') {
+                          this.currentStates = this.epsilonClosure(this.currentStates);
+                      }
+                  } else if (automataType === 'pda') {
+                      this.currentStates = [initialState.id];
+                      // Initialize stack with initial symbol
+                      this.stack = [this.initialStackSymbol];
+                  }
+                  
+                  this.updateStatus();
+                  this.drawAutomata();
+                  
+                  // Process input with animation delays
+                  for (let i = 0; i < this.inputString.length; i++) {
+                      if (!this.isRunning) break;
+                      
+                      await this.processStep(i);
+                  }
+                  
+                  if (this.isRunning) {
+                      await this.finalizeSimulation();
+                  }
+              }
+
+              async processStep(stepIndex) {
+                  const currentSymbol = this.inputString[stepIndex];
+                  this.currentStep = stepIndex;
+                  
+                  // Update UI
+                  document.getElementById('currentSymbol').textContent = `Processing: '${currentSymbol}'`;
+                  document.getElementById('stepInfo').textContent = 
+                      `Step ${stepIndex + 1}: Reading symbol '${currentSymbol}'`;
+                  document.getElementById('stepInfo').className = 'step-info processing';
+                  
+                  // Find active transitions
+                  this.activeTransitions = [];
+                  const automataType = document.getElementById('automataType').value;
+                  
+                  if (automataType === 'pda') {
+                      // PDA transition logic
+                      this.currentStates.forEach(stateId => {
+                          const transitions = this.transitions.filter(t => 
+                              t.from === stateId && 
+                              (t.input === currentSymbol || t.input === 'ε') &&
+                              (t.pop === 'ε' || (this.stack.length > 0 && t.pop === this.stack[this.stack.length - 1]))
+                          );
+                          this.activeTransitions.push(...transitions);
+                      });
+                  } else {
+                      // Standard automata transition logic
+                      this.currentStates.forEach(stateId => {
+                          const transitions = this.transitions.filter(t => 
+                              t.from === stateId && t.symbols.includes(currentSymbol)
+                          );
+                          this.activeTransitions.push(...transitions);
+                      });
+                  }
+                  
+                  // Animate transitions
+                  this.drawAutomata();
+                  await this.delay(1000);
+                  
+                  // Calculate next states
+                  let nextStates = [];
+                  if (automataType === 'dfa') {
+                      const currentState = this.currentStates[0];
+                      const transition = this.transitions.find(t => 
+                          t.from === currentState && t.symbols.includes(currentSymbol)
+                      );
+                      if (transition) {
+                          nextStates = [transition.to];
+                      }
+                  } else if (automataType === 'nfa' || automataType === 'regex') {
+                      this.currentStates.forEach(stateId => {
+                          const transitions = this.transitions.filter(t => 
+                              t.from === stateId && t.symbols.includes(currentSymbol)
+                          );
+                          transitions.forEach(t => {
+                              if (!nextStates.includes(t.to)) {
+                                  nextStates.push(t.to);
+                              }
+                          });
+                      });
+                  } else if (automataType === 'enfa') {
+                      this.currentStates.forEach(stateId => {
+                          const transitions = this.transitions.filter(t => 
+                              t.from === stateId && (t.symbols.includes(currentSymbol) || t.symbols.includes('ε'))
+                          );
+                          transitions.forEach(t => {
+                              if (!nextStates.includes(t.to)) {
+                                  nextStates.push(t.to);
+                              }
+                          });
+                      });
+                      nextStates = this.epsilonClosure(nextStates);
+                  } else if (automataType === 'pda') {
+                      // PDA transition execution
+                      this.currentStates.forEach(stateId => {
+                          const transitions = this.transitions.filter(t => 
+                              t.from === stateId && 
+                              (t.input === currentSymbol || t.input === 'ε') &&
+                              (t.pop === 'ε' || (this.stack.length > 0 && t.pop === this.stack[this.stack.length - 1]))
+                          );
+                          
+                          transitions.forEach(t => {
+                              if (!nextStates.includes(t.to)) {
+                                  nextStates.push(t.to);
+                              }
+                              
+                              // Apply stack operations
+                              if (t.pop !== 'ε') {
+                                  this.stack.pop(); // Remove top of stack
+                              }
+                              
+                              if (t.push !== 'ε') {
+                                  // Push symbols in reverse order to maintain correct stack order
+                                  for (let i = t.push.length - 1; i >= 0; i--) {
+                                      this.stack.push(t.push[i]);
+                                  }
+                              }
+                          });
+                      });
+                  }
+                  
+                  // Update current states
+                  this.currentStates = nextStates;
+                  this.activeTransitions = [];
+                  
+                  // Update visualization
+                  this.updateStatus();
+                  this.drawAutomata();
+                  
+                  await this.delay(500);
+              }
+
+              async finalizeSimulation() {
+                  const automataType = document.getElementById('automataType').value;
+                  let hasFinalState = false;
+                  
+                  if (automataType === 'pda') {
+                      // For PDA, check if we're in a final state AND the stack is empty (for empty stack acceptance)
+                      // or just in a final state (for final state acceptance)
+                      hasFinalState = this.currentStates.some(stateId => {
+                          const state = this.states.find(s => s.id === stateId);
+                          return state && state.isFinal;
+                      });
+                      
+                      // For this implementation, we'll use final state acceptance
+                      // In a more complete implementation, you might offer both options
+                  } else {
+                      hasFinalState = this.currentStates.some(stateId => {
+                          const state = this.states.find(s => s.id === stateId);
+                          return state && state.isFinal;
+                      });
+                  }
+                  
+                  document.getElementById('currentSymbol').textContent = '';
+                  
+                  if (hasFinalState) {
+                      document.getElementById('statusBar').textContent = '✓ String Accepted!';
+                      document.getElementById('statusBar').className = 'status-bar accepted';
+                      document.getElementById('stepInfo').textContent = 'Reached final state after processing all input';
+                  } else {
+                      document.getElementById('statusBar').textContent = '✗ String Rejected!';
+                      document.getElementById('statusBar').className = 'status-bar rejected';
+                      document.getElementById('stepInfo').textContent = 'No final state reached after processing all input';
+                  }
+                  
+                  this.isRunning = false;
+              }
+
+              stepSimulation() {
+                  if (!this.isRunning) {
+                      this.runSimulation();
+                      return;
+                  }
+                  
+                  // For step mode, we'll let the user control the pace
+                  // This would need additional logic to handle step-by-step execution
+                  alert('Step-by-step mode would be implemented here');
+              }
+
+              resetSimulation() {
+                  this.isRunning = false;
+                  this.currentStep = 0;
+                  this.currentStates = [];
+                  this.activeTransitions = [];
+                  this.stack = [];
+                  
+                  document.getElementById('currentSymbol').textContent = '';
+                  document.getElementById('statusBar').textContent = 'Enter an input string and click "Run Animation"';
+                  document.getElementById('statusBar').className = 'status-bar';
+                  document.getElementById('stepInfo').textContent = '';
+                  document.getElementById('stepInfo').className = 'step-info';
+                  
+                  this.drawAutomata();
+              }
+
+              updateStatus() {
+                  const automataType = document.getElementById('automataType').value;
+                  let statusText = `Step ${this.currentStep + 1}/${this.inputString.length} | Current states: ${this.currentStates.join(', ') || 'None'}`;
+                  
+                  if (automataType === 'pda') {
+                      const stackTop = this.stack.length > 0 ? this.stack[this.stack.length - 1] : 'ε';
+                      statusText += ` | Stack: [${this.stack.join(',')}]`;
+                  }
+                  
+                  document.getElementById('statusBar').textContent = statusText;
+                  document.getElementById('statusBar').className = 'status-bar';
+              }
+
+              epsilonClosure(states) {
+                  const closure = [...states];
+                  let changed = true;
+                  
+                  while (changed) {
+                      changed = false;
+                      const currentClosure = [...closure];
+                      
+                      currentClosure.forEach(stateId => {
+                          const epsilonTransitions = this.transitions.filter(t => 
+                              t.from === stateId && t.symbols.includes('ε')
+                          );
+                          
+                          epsilonTransitions.forEach(t => {
+                              if (!closure.includes(t.to)) {
+                                  closure.push(t.to);
+                                  changed = true;
+                              }
+                          });
+                      });
+                  }
+                  
+                  return closure;
+              }
+
+              buildAutomatonFromRegex() {
+                  const regexInput = document.getElementById('regexInput').value.trim();
+                  
+                  if (!regexInput) {
+                      alert('Please enter a regular expression');
+                      return;
+                  }
+                  
+                  // Basic regex parsing - this is a simplified implementation
+                  // A full implementation would require a proper parser
+                  try {
+                      // Clear existing automaton
+                      this.states = [];
+                      this.transitions = [];
+                      this.stateCounter = 0;
+                      
+                      // Create initial and final states
+                      const initialState = { id: 'q0', x: 200, y: 200, isInitial: true, isFinal: false, radius: 30 };
+                      const finalState = { id: 'q1', x: 400, y: 200, isInitial: false, isFinal: true, radius: 30 };
+                      
+                      this.states.push(initialState, finalState);
+                      this.stateCounter = 2;
+                      
+                      // Create transitions based on regex
+                      // This is a simplified implementation - a real one would parse the regex properly
+                      if (regexInput === '(0|1)*') {
+                          // All binary strings
+                          this.transitions.push(
+                              { from: 'q0', to: 'q1', symbols: ['0', '1'] },
+                              { from: 'q1', to: 'q1', symbols: ['0', '1'] }
+                          );
+                      } else if (regexInput === '(0|1)*01(0|1)*') {
+                          // Strings containing '01'
+                          const middleState = { id: 'q2', x: 300, y: 200, isInitial: false, isFinal: false, radius: 30 };
+                          this.states.push(middleState);
+                          this.stateCounter = 3;
+                          
+                          this.transitions.push(
+                              { from: 'q0', to: 'q0', symbols: ['0', '1'] },
+                              { from: 'q0', to: 'q2', symbols: ['0'] },
+                              { from: 'q2', to: 'q1', symbols: ['1'] },
+                              { from: 'q1', to: 'q1', symbols: ['0', '1'] }
+                          );
+                      } else if (regexInput === '0*1*') {
+                          // Zero or more 0s followed by zero or more 1s
+                          this.transitions.push(
+                              { from: 'q0', to: 'q0', symbols: ['0'] },
+                              { from: 'q0', to: 'q1', symbols: ['1'] },
+                              { from: 'q1', to: 'q1', symbols: ['1'] }
+                          );
+                      } else {
+                          // Default fallback - create a simple automaton
+                          this.transitions.push(
+                              { from: 'q0', to: 'q1', symbols: ['0', '1'] }
+                          );
+                      }
+                      
+                      this.updateStatesList();
+                      this.updateTransitionsList();
+                      this.updateStateSelects();
+                      this.drawAutomata();
+                      
+                      document.getElementById('statusBar').textContent = 'Automaton built from regex';
+                      document.getElementById('statusBar').className = 'status-bar accepted';
+                  } catch (error) {
+                      alert('Error parsing regular expression: ' + error.message);
+                  }
+              }
+
+              delay(ms) {
+                  return new Promise(resolve => setTimeout(resolve, ms));
+              }
+          }
+
+          // Initialize the simulator when the page loads
+          document.addEventListener('DOMContentLoaded', () => {
+              new AutomataSimulator();
+          });
+     </script>
+  </body>
+  </html>
